@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include <mpi/mpi.h>
+#include <mpi.h>
 
 using namespace std;
 

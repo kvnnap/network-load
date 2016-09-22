@@ -20,7 +20,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 
 # network_load target
 # Find all source files in the below directory automatically
-file(GLOB_RECURSE SOURCE_FILES)
+file(GLOB_RECURSE SOURCE_FILES
+     Application/*.cpp
+     Sampler/*.cpp
+)
 
 add_executable(network_load main.cpp ${SOURCE_FILES})
 target_include_directories(network_load PUBLIC . ${MPI_CXX_INCLUDE_PATH})
