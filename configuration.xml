@@ -1,0 +1,16 @@
+<netload>
+	<granularity>1000</granularity>
+	<message size="16" length="1024"></message>
+	<nodes size="2">
+		<!-- Rank 0 -->
+		<pdsf>
+			<val>0</val>
+			<val>100</val>
+		</pdsf>
+		<!-- Rank 1 -->
+		<pdsf>
+			<val>100</val>
+			<val>0</val>
+		</pdsf>
+	</nodes>
+</netload>

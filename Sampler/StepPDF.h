@@ -15,10 +15,13 @@ namespace Sampler {
     public:
         StepPDF(const std::vector<uint32_t>& p_pdsf);
         size_t getNext();
+        const std::vector<uint32_t>& getPDSF() const;
     private:
         UniformSampler uniformSampler;
         std::vector<uint32_t> pdsf;
     };
+
+    std::ostream& operator<< (std::ostream& strm, const StepPDF& stepPDF);
 }
 
 

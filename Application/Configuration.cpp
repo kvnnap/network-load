@@ -2,8 +2,11 @@
 // Created by kevin on 9/22/16.
 //
 
+#include <ostream>
+
 #include "Configuration.h"
 
+using namespace std;
 using namespace NetworkLoad;
 
 MessageInfo::MessageInfo()
@@ -58,4 +61,21 @@ const MessageInfo &Configuration::getMessageInfo() const {
     return messageInfo;
 }
 
+Sampler::StepPDF &Configuration::getStepPDF() {
+    return stepPDFs.at(0);
+}
 
+ostream& NetworkLoad::operator<<(ostream &strm, const Configuration &conf) {
+    strm << "Granularity: " << conf.getGranularity() << endl
+         << "Message: " << conf.getMessageInfo() << endl;
+    for (const Sampler::StepPDF& stepPDF : conf.getStepPDFs()) {
+        strm << stepPDF << endl;
+    }
+    return strm;
+}
+
+ostream& NetworkLoad::operator<<(ostream &strm, const MessageInfo &messageInfo) {
+    strm << "Message Size: " << messageInfo.getMessageSize() << endl
+         << "Message Length: " << messageInfo.getMessageLength();
+    return strm;
+}

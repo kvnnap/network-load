@@ -26,6 +26,8 @@ namespace NetworkLoad {
         uint32_t length;
     };
 
+    std::ostream& operator<< (std::ostream& strm, const MessageInfo& messageInfo);
+
     class Configuration {
     public:
         Configuration();
@@ -37,6 +39,7 @@ namespace NetworkLoad {
         uint32_t getGranularity() const;
         const MessageInfo& getMessageInfo() const;
         const std::vector<Sampler::StepPDF>& getStepPDFs() const;
+        Sampler::StepPDF& getStepPDF();
         size_t getNodeSize() const;
 
     private:
@@ -44,6 +47,8 @@ namespace NetworkLoad {
         MessageInfo messageInfo;
         std::vector<Sampler::StepPDF> stepPDFs;
     };
+
+    std::ostream& operator<< (std::ostream& strm, const Configuration& conf);
 }
 
 

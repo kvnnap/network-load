@@ -84,7 +84,16 @@ MessageInfo ConfigurationFactory::getMessageInfo(xml_node<> *messageNode) {
 }
 
 Sampler::StepPDF ConfigurationFactory::getPDSF(rapidxml::xml_node<> *psdfNode) {
-    return Sampler::StepPDF(std::vector<uint32_t>());
+    vector<uint32_t> vals;
+    for (xml_node<> *child = psdfNode->first_node(); child; child = child->next_sibling()) {
+        string childName (child->name());
+        if (childName == "val") {
+            vals.push_back(getValue(child->value()));
+        } else {
+            throw runtime_error("Malformed XML File. Invalid XML Node: " + childName);
+        }
+    }
+    return Sampler::StepPDF(vals);
 }
 
 uint32_t ConfigurationFactory::getValue(const std::string &value) {

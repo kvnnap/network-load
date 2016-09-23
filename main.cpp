@@ -1,21 +1,26 @@
 #include <iostream>
 #include <string>
 #include <mpi.h>
+#include <cstddef>
+#include <Application/Application.h>
+
+#include "Application/ConfigurationFactory.h"
 
 using namespace std;
+using namespace NetworkLoad;
 
 int main(int argc, char **argv) {
-    int size, rank, len;
-    char name[MPI_MAX_PROCESSOR_NAME];
-    MPI::Init(argc, argv);
 
-    size = MPI::COMM_WORLD.Get_size();
-    rank = MPI::COMM_WORLD.Get_rank();
-    MPI::Get_processor_name(name, len);
+    Application application (argc, argv);
 
-    //printf("Size: %d, Rank: %d, ProcName: %s", size, rank, std::string(name, len).c_str());
-    cout << "Size: " << size << " Rank: " << rank << " Proc Name: " << string(name, len) << endl;
+    try {
+        application.syncRanksAndPrint();
+        application.syncConfiguration();
+        application.startMessaging();
+    } catch (const exception& exception) {
+        cout << "Exception: " << exception.what() << endl;
+        MPI::COMM_WORLD.Abort(-1);
+    }
 
-    MPI::Finalize();
     return 0;
 }

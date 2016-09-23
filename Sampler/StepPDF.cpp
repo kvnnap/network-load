@@ -3,6 +3,7 @@
 //
 
 #include <stdexcept>
+#include <ostream>
 
 #include "StepPDF.h"
 
@@ -34,3 +35,19 @@ size_t StepPDF::getNext() {
     throw runtime_error("Fatal: Could not select next");
 }
 
+const std::vector<uint32_t> &StepPDF::getPDSF() const {
+    return pdsf;
+}
+
+
+ostream& Sampler::operator<<(ostream &strm, const StepPDF &stepPDF) {
+    strm << "{";
+    for (size_t i = 0; i < stepPDF.getPDSF().size(); ++i) {
+        strm << stepPDF.getPDSF()[i];
+        if ((i + 1) != stepPDF.getPDSF().size()) {
+            strm << ", ";
+        }
+    }
+    strm << "}";
+    return strm;
+}
