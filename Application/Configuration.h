@@ -28,23 +28,54 @@ namespace NetworkLoad {
 
     std::ostream& operator<< (std::ostream& strm, const MessageInfo& messageInfo);
 
+    class ConfidenceInterval {
+    public:
+        ConfidenceInterval();
+
+        // Setters
+        void setStdConfidence(float p_stdConfidence);
+        void setConfIntervalThreshold(float p_cIT);
+        void setMinIterations(size_t p_minIterations);
+        void setMaxIterations(size_t p_maxIterations);
+
+        // Getters
+        float getStdConfidence() const;
+        float getConfIntervalThreshold() const;
+        size_t getMinIterations() const;
+        size_t getMaxIterations() const;
+    private:
+        float stdConfidence;
+        float confidenceIntervalThreshold;
+        size_t minIterations;
+        size_t maxIterations;
+    };
+
+    std::ostream& operator<< (std::ostream& strm, const ConfidenceInterval& ConfidenceInterval);
+
     class Configuration {
     public:
         Configuration();
 
+        // Setters
         void setGranularity(uint32_t p_granularity);
         void setMessageInfo(const MessageInfo& p_messageInfo);
         void addStepPDF(const Sampler::StepPDF& p_stepPDF);
+        void setConfidenceInterval(const ConfidenceInterval& p_confidenceInterval);
 
+        // Getters
         uint32_t getGranularity() const;
         const MessageInfo& getMessageInfo() const;
         const std::vector<Sampler::StepPDF>& getStepPDFs() const;
-        Sampler::StepPDF& getStepPDF();
         size_t getNodeSize() const;
+        const ConfidenceInterval& getConfidenceInterval() const;
+
+        // Non-const getters
+        Sampler::StepPDF& getStepPDF();
 
     private:
         uint32_t granularity;
         MessageInfo messageInfo;
+        ConfidenceInterval confidenceInterval;
         std::vector<Sampler::StepPDF> stepPDFs;
     };
 

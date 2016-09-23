@@ -32,6 +32,8 @@ Configuration ConfigurationFactory::getNetLoad(rapidxml::xml_node<> *netLoadNode
         string childName (child->name());
         if (childName == "granularity") {
             conf.setGranularity(getGranularity(child));
+        } else if (childName == "confidence") {
+            conf.setConfidenceInterval(getConfidenceInterval(child));
         } else if (childName == "message") {
             conf.setMessageInfo(getMessageInfo(child));
         } else if (childName == "nodes") {
@@ -103,4 +105,23 @@ uint32_t ConfigurationFactory::getValue(const std::string &value) {
         return val;
     }
     throw runtime_error("Cannot convert " + value + " to uint32_t");
+}
+
+ConfidenceInterval ConfigurationFactory::getConfidenceInterval(rapidxml::xml_node<> *confidenceIntervalNode) {
+    ConfidenceInterval confidenceInterval;
+    for (xml_attribute<> *attr = confidenceIntervalNode->first_attribute(); attr; attr = attr->next_attribute()) {
+        string attrName (attr->name());
+        if (attrName == "stdConfidence") {
+            confidenceInterval.setStdConfidence(stof(attr->value()));
+        } else if (attrName == "confidenceIntervalThreshold") {
+            confidenceInterval.setConfIntervalThreshold(stof(attr->value()));
+        } else if (attrName == "minIterations") {
+            confidenceInterval.setMinIterations(stoul(attr->value()));
+        } else if (attrName == "maxIterations") {
+            confidenceInterval.setMaxIterations(stoul(attr->value()));
+        } else {
+            throw runtime_error("Malformed XML File. Invalid XML Attribute: " + attrName);
+        }
+    }
+    return confidenceInterval;
 }

@@ -7,8 +7,10 @@
 
 #include "Application.h"
 #include "ConfigurationFactory.h"
+#include "Mathematics/Statistics.h"
 
 using namespace std;
+using namespace Mathematics;
 using namespace NetworkLoad;
 
 Application::Application(int argc, char **argv) {
@@ -158,9 +160,67 @@ float Application::startMessaging() {
     // calculate duration
     duration<float, milli> fMilliSec = t2 - t1;
 
-    if (rank == 0) {
-        cout << "Ready. Process took " << fMilliSec.count() << " ms" << endl;
-    }
+//    if (rank == 0) {
+//        cout << "Ready. Process took " << fMilliSec.count() << " ms" << endl;
+//    }
 
     return fMilliSec.count();
+}
+
+// No Tags - using broadcast
+float Application::gatherConfidentMessage() {
+    if (rank == 0) {
+        vector<float> executionTimes;
+        bool confident = false;
+        size_t minMeasurements = configuration.getConfidenceInterval().getMinIterations();
+        do {
+            // Send confidence flag
+            MPI::COMM_WORLD.Bcast(&confident, 1, MPI::BOOL, 0);
+
+            // Compute
+            executionTimes.push_back(startMessaging());
+
+            if (executionTimes.size() == minMeasurements) {
+                // Do confidence check
+                // Do twice more measurements if not confident enough
+                minMeasurements *= 2;
+
+                // Check if we're confident enough this time round
+                const float sampleStdDeviation = Statistics::SampleStdDeviation(executionTimes);
+                const float stdDeviationOfTheMean = Statistics::StdDeviationOfTheMean(sampleStdDeviation,
+                                                                                      executionTimes.size());
+                const float confidenceInterval =
+                        stdDeviationOfTheMean * configuration.getConfidenceInterval().getStdConfidence();
+                confident = confidenceInterval <= configuration.getConfidenceInterval().getConfIntervalThreshold();
+            }
+        } while (!confident &&
+                 (configuration.getConfidenceInterval().getMaxIterations() == 0 ||
+                  executionTimes.size() < configuration.getConfidenceInterval().getMaxIterations()));
+
+        const float confidentMean = Statistics::Mean(executionTimes);
+        if (confident) {
+            cout << "Confident Mean: " << confidentMean << endl;
+        } else {
+            cout << "Cut-Off Mean:" << confidentMean << endl;
+        }
+
+        // Reuse confidence flag and send it
+        confident = true;
+        MPI::COMM_WORLD.Bcast(&confident, 1, MPI::BOOL, 0);
+
+        MPI::COMM_WORLD.Barrier();
+
+        return confidentMean;
+    } else {
+        bool confident;
+        do {
+            // Read resume flag
+            MPI::COMM_WORLD.Bcast(&confident, 1, MPI::BOOL, 0);
+            if (!confident) {
+                startMessaging();
+            }
+        } while (!confident);
+        MPI::COMM_WORLD.Barrier();
+        return 0.f;
+    }
 }

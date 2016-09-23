@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     try {
         application.syncRanksAndPrint();
         application.syncConfiguration();
-        application.startMessaging();
+        application.gatherConfidentMessage();
     } catch (const exception& exception) {
         cout << "Exception: " << exception.what() << endl;
         MPI::COMM_WORLD.Abort(-1);

@@ -22,6 +22,7 @@ namespace NetworkLoad {
         void syncConfiguration();
 
         float startMessaging();
+        float gatherConfidentMessage();
 
     private:
         Configuration configuration;

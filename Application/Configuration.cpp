@@ -65,9 +65,18 @@ Sampler::StepPDF &Configuration::getStepPDF() {
     return stepPDFs.at(0);
 }
 
+void Configuration::setConfidenceInterval(const ConfidenceInterval &p_confidenceInterval) {
+    confidenceInterval = p_confidenceInterval;
+}
+
+const ConfidenceInterval &Configuration::getConfidenceInterval() const {
+    return confidenceInterval;
+}
+
 ostream& NetworkLoad::operator<<(ostream &strm, const Configuration &conf) {
     strm << "Granularity: " << conf.getGranularity() << endl
-         << "Message: " << conf.getMessageInfo() << endl;
+         << "Message: " << conf.getMessageInfo() << endl
+         << "ConfidenceInterval: " << conf.getConfidenceInterval() << endl;
     for (const Sampler::StepPDF& stepPDF : conf.getStepPDFs()) {
         strm << stepPDF << endl;
     }
@@ -77,5 +86,49 @@ ostream& NetworkLoad::operator<<(ostream &strm, const Configuration &conf) {
 ostream& NetworkLoad::operator<<(ostream &strm, const MessageInfo &messageInfo) {
     strm << "Message Size: " << messageInfo.getMessageSize() << endl
          << "Message Length: " << messageInfo.getMessageLength();
+    return strm;
+}
+
+ConfidenceInterval::ConfidenceInterval()
+    : stdConfidence (), confidenceIntervalThreshold(), minIterations (), maxIterations ()
+{}
+
+void ConfidenceInterval::setStdConfidence(float p_stdConfidence) {
+    stdConfidence = p_stdConfidence;
+}
+
+void ConfidenceInterval::setConfIntervalThreshold(float p_cIT) {
+    confidenceIntervalThreshold = p_cIT;
+}
+
+void ConfidenceInterval::setMinIterations(size_t p_minIterations) {
+    minIterations = p_minIterations;
+}
+
+void ConfidenceInterval::setMaxIterations(size_t p_maxIterations) {
+    maxIterations = p_maxIterations;
+}
+
+float ConfidenceInterval::getStdConfidence() const {
+    return stdConfidence;
+}
+
+float ConfidenceInterval::getConfIntervalThreshold() const {
+    return confidenceIntervalThreshold;
+}
+
+size_t ConfidenceInterval::getMinIterations() const {
+    return minIterations;
+}
+
+size_t ConfidenceInterval::getMaxIterations() const {
+    return maxIterations;
+}
+
+ostream& NetworkLoad::operator<<(ostream &strm, const ConfidenceInterval &confidenceInterval) {
+    strm << "Std Confidence: " << confidenceInterval.getStdConfidence() << endl
+         << "Confidence Threshold: " << confidenceInterval.getConfIntervalThreshold() << endl
+         << "Min Iterations: " << confidenceInterval.getMinIterations() << endl
+         << "Max Iterations: " << confidenceInterval.getMaxIterations() << endl;
     return strm;
 }

@@ -1,5 +1,6 @@
 <netload>
-	<granularity>1000</granularity>
+	<granularity>0</granularity>
+	<confidence stdConfidence="2" confidenceIntervalThreshold="10000" minIterations="2" maxIterations="16"></confidence>
 	<message size="16" length="1024"></message>
 	<nodes size="2">
 		<!-- Rank 0 -->
