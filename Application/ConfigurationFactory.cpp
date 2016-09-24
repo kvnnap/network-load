@@ -30,7 +30,9 @@ Configuration ConfigurationFactory::getNetLoad(rapidxml::xml_node<> *netLoadNode
     Configuration conf;
     for (xml_node<> *child = netLoadNode->first_node(); child; child = child->next_sibling()) {
         string childName (child->name());
-        if (childName == "granularity") {
+        if (childName == "messagingmethod") {
+            conf.setMessagingMethod(getValue(child->value()));
+        } else if (childName == "granularity") {
             conf.setGranularity(getGranularity(child));
         } else if (childName == "confidence") {
             conf.setConfidenceInterval(getConfidenceInterval(child));
@@ -99,6 +101,7 @@ Sampler::StepPDF ConfigurationFactory::getPDSF(rapidxml::xml_node<> *psdfNode) {
 }
 
 uint32_t ConfigurationFactory::getValue(const std::string &value) {
+    // return stoul(value);
     uint32_t val;
     istringstream strVal (value);
     if (strVal >> val) {

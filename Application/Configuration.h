@@ -57,6 +57,7 @@ namespace NetworkLoad {
         Configuration();
 
         // Setters
+        void setMessagingMethod(uint32_t p_messagingMethod);
         void setGranularity(uint32_t p_granularity);
         void setMessageInfo(const MessageInfo& p_messageInfo);
         void addStepPDF(const Sampler::StepPDF& p_stepPDF);
@@ -64,6 +65,7 @@ namespace NetworkLoad {
 
         // Getters
         uint32_t getGranularity() const;
+        uint32_t getMessagingMethod() const;
         const MessageInfo& getMessageInfo() const;
         const std::vector<Sampler::StepPDF>& getStepPDFs() const;
         size_t getNodeSize() const;
@@ -73,6 +75,7 @@ namespace NetworkLoad {
         Sampler::StepPDF& getStepPDF();
 
     private:
+        uint32_t messagingMethod;
         uint32_t granularity;
         MessageInfo messageInfo;
         ConfidenceInterval confidenceInterval;

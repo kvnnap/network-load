@@ -14,7 +14,7 @@ MessageInfo::MessageInfo()
 {}
 
 Configuration::Configuration()
-    : granularity ()
+    : messagingMethod(), granularity ()
 {}
 
 void MessageInfo::setMessageSize(uint32_t p_messageSize) {
@@ -71,6 +71,14 @@ void Configuration::setConfidenceInterval(const ConfidenceInterval &p_confidence
 
 const ConfidenceInterval &Configuration::getConfidenceInterval() const {
     return confidenceInterval;
+}
+
+void Configuration::setMessagingMethod(uint32_t p_messagingMethod) {
+    messagingMethod = p_messagingMethod;
+}
+
+uint32_t Configuration::getMessagingMethod() const {
+    return messagingMethod;
 }
 
 ostream& NetworkLoad::operator<<(ostream &strm, const Configuration &conf) {

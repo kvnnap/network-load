@@ -14,7 +14,7 @@ namespace Sampler {
     class StepPDF {
     public:
         StepPDF(const std::vector<uint32_t>& p_pdsf);
-        size_t getNext();
+        ssize_t getNext();
         const std::vector<uint32_t>& getPDSF() const;
     private:
         UniformSampler uniformSampler;
