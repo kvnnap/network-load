@@ -43,9 +43,10 @@ void Application::syncRanksAndPrint() {
         array<char, MPI_MAX_PROCESSOR_NAME> name;
         for (size_t i = 1; i < size; ++i) {
             MPI::COMM_WORLD.Recv(name.data(), MPI_MAX_PROCESSOR_NAME, MPI::CHAR, i, 0);
-            cout << ", " << name.data() << endl;
+            cout << ", " << name.data();
             //names.push_back(name.data());
         }
+        cout << endl;
         // Check for duplicates
 
     } else {
