@@ -327,8 +327,12 @@ float Application::startMessaging() {
 float Application::gatherConfidentMessage() {
     if (rank == 0) {
         vector<float> executionTimes;
-        bool confident = false;
         size_t minMeasurements = configuration.getConfidenceInterval().getMinIterations();
+        float sampleStdDeviation;
+        float stdDeviationOfTheMean;
+        float confidenceInterval;
+        bool confident = false;
+
         do {
             // Send confidence flag
             MPI::COMM_WORLD.Bcast(&confident, 1, MPI::BOOL, 0);
@@ -342,10 +346,10 @@ float Application::gatherConfidentMessage() {
                 minMeasurements *= 2;
 
                 // Check if we're confident enough this time round
-                const float sampleStdDeviation = Statistics::SampleStdDeviation(executionTimes);
-                const float stdDeviationOfTheMean = Statistics::StdDeviationOfTheMean(sampleStdDeviation,
+                sampleStdDeviation = Statistics::SampleStdDeviation(executionTimes);
+                stdDeviationOfTheMean = Statistics::StdDeviationOfTheMean(sampleStdDeviation,
                                                                                       executionTimes.size());
-                const float confidenceInterval =
+                confidenceInterval =
                         stdDeviationOfTheMean * configuration.getConfidenceInterval().getStdConfidence();
                 confident = confidenceInterval <= configuration.getConfidenceInterval().getConfIntervalThreshold();
             }
@@ -354,11 +358,11 @@ float Application::gatherConfidentMessage() {
                   executionTimes.size() < configuration.getConfidenceInterval().getMaxIterations()));
 
         const float confidentMean = Statistics::Mean(executionTimes);
-        if (confident) {
-            cout << "Confident Mean: " << confidentMean << endl;
-        } else {
-            cout << "Cut-Off Mean: " << confidentMean << endl;
-        }
+        cout << (confident ? "Confident Mean: " : "Cut-Off Mean: ") << confidentMean
+             << " +- " << confidenceInterval << " -"
+             << " Mean-Variance: " << (stdDeviationOfTheMean * stdDeviationOfTheMean)
+             << " Variance: " << (sampleStdDeviation * sampleStdDeviation)
+             << endl;
 
         // Reuse confidence flag and send it
         confident = true;
