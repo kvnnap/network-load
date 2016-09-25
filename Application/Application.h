@@ -27,7 +27,7 @@ namespace NetworkLoad {
     private:
         Configuration configuration;
         std::array<char, MPI_MAX_PROCESSOR_NAME> processorName;
-        int size, rank;
+        size_t size, rank;
     };
 
 }
