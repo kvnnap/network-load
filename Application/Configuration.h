@@ -72,7 +72,8 @@ namespace NetworkLoad {
         const ConfidenceInterval& getConfidenceInterval() const;
 
         // Non-const getters
-        Sampler::StepPDF& getStepPDF();
+        //Sampler::StepPDF& getStepPDF();
+        Sampler::StepPDF& getStepPDF(size_t index = 0);
 
     private:
         uint32_t messagingMethod;

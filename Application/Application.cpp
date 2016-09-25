@@ -100,7 +100,90 @@ void Application::syncConfiguration() {
 // Tags used are 2 and 3
 float Application::startMessaging() {
     using namespace chrono;
-    // Generate sequence of destinations
+
+    vector<uint32_t> localSourceIdList;
+    vector<char> buff (configuration.getMessageInfo().getMessageLength());
+    iota(buff.begin(), buff.end(), 0);
+
+    if (rank == 0) {
+        // Generate sequence of messages
+        vector<pair<size_t, size_t>> messageList;
+
+        for (size_t p = 0; p < size; ++p) {
+            Sampler::StepPDF& pdfI = configuration.getStepPDF(p);
+            for (size_t i = 0; i < configuration.getMessageInfo().getMessageSize(); ++i) {
+                ssize_t index = pdfI.getNext();
+                if (index == p) {
+                    throw runtime_error ("Can't send message to self");
+                }
+                if (index >= 0) {
+                    messageList.push_back({p, static_cast<size_t>(index)});
+                }
+            }
+        }
+
+        // Shuffle messageList?
+
+        // Send relevant messages pairs
+        vector<vector<uint32_t>> sourceIDs (size);
+        for (const pair<size_t, size_t>& message : messageList) {
+            // The sender
+            sourceIDs.at(message.first).push_back(message.first);
+            sourceIDs.at(message.first).push_back(message.second);
+            // The receiver
+            sourceIDs.at(message.second).push_back(message.first);
+            sourceIDs.at(message.second).push_back(message.second);
+        }
+
+        // Send the source id's to each rank
+        for (size_t i = 1; i < sourceIDs.size(); ++i) {
+            uint32_t sourceIdListSize = sourceIDs[i].size();
+            MPI::COMM_WORLD.Send(&sourceIdListSize, 1, MPI::UNSIGNED, i, 4);
+            MPI::COMM_WORLD.Send(sourceIDs[i].data(), sourceIdListSize, MPI::UNSIGNED, i, 5);
+        }
+
+        localSourceIdList = sourceIDs[0];
+
+    } else {
+        uint32_t sourceIdListSize;
+        MPI::COMM_WORLD.Recv(&sourceIdListSize, 1, MPI::UNSIGNED, 0, 4);
+        localSourceIdList.resize(sourceIdListSize, 0);
+        MPI::COMM_WORLD.Recv(localSourceIdList.data(), sourceIdListSize, MPI::UNSIGNED, 0, 5);
+    }
+
+    // Make sure everyone is here..
+    MPI::COMM_WORLD.Barrier();
+
+    // Setup timer
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+    // Send/Receive messsages
+    for (size_t i = 0; i < localSourceIdList.size(); i += 2) {
+        if (localSourceIdList[i] == rank) {
+            // we must send
+            MPI::COMM_WORLD.Send(buff.data(), buff.size(), MPI::CHAR, localSourceIdList.at(i + 1), 3);
+        } else if (localSourceIdList.at(i + 1) == rank){
+            // we must receive
+            MPI::COMM_WORLD.Recv(buff.data(), buff.size(), MPI::CHAR, localSourceIdList[i], 3);
+        } else {
+            // Sanity check
+            throw runtime_error ("Mismatching Message Pair: Rank " + to_string(rank) + ": - "
+                                 + to_string(localSourceIdList[i]) + " --> " + to_string(localSourceIdList[i + 1]));
+        }
+    }
+
+    // Final barrier
+    MPI::COMM_WORLD.Barrier();
+
+    // Execution time
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+
+    // calculate duration
+    duration<float, milli> fMilliSec = t2 - t1;
+
+    return fMilliSec.count();
+
+    /*// Generate sequence of destinations
     vector<size_t> destinations;
     for (size_t i = 0; i < configuration.getMessageInfo().getMessageSize(); ++i) {
         ssize_t index = configuration.getStepPDF().getNext();
@@ -209,7 +292,7 @@ float Application::startMessaging() {
     // calculate duration
     duration<float, milli> fMilliSec = t2 - t1;
 
-    return fMilliSec.count();
+    return fMilliSec.count();*/
 }
 
 // No Tags - using broadcast

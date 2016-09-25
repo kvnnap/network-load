@@ -61,8 +61,12 @@ const MessageInfo &Configuration::getMessageInfo() const {
     return messageInfo;
 }
 
-Sampler::StepPDF &Configuration::getStepPDF() {
+/*Sampler::StepPDF &Configuration::getStepPDF() {
     return stepPDFs.at(0);
+}*/
+
+Sampler::StepPDF &Configuration::getStepPDF(size_t index) {
+    return stepPDFs.at(index);
 }
 
 void Configuration::setConfidenceInterval(const ConfidenceInterval &p_confidenceInterval) {
