@@ -106,7 +106,7 @@ void Application::syncConfiguration() {
 }
 
 // Tags used are 2, 3, 4 and 5
-float Application::startMessaging() {
+double Application::startMessaging() {
     using namespace chrono;
 
     if (configuration.getMessagingMethod() == 3 || configuration.getMessagingMethod() == 4) {
@@ -201,7 +201,7 @@ float Application::startMessaging() {
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
         // calculate duration
-        duration<float, milli> fMilliSec = t2 - t1;
+        duration<double, milli> fMilliSec = t2 - t1;
 
         return fMilliSec.count();
 
@@ -317,20 +317,20 @@ float Application::startMessaging() {
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
         // calculate duration
-        duration<float, milli> fMilliSec = t2 - t1;
+        duration<double, milli> fMilliSec = t2 - t1;
 
         return fMilliSec.count();
     }
 }
 
 // No Tags - using broadcast
-float Application::gatherConfidentMessage() {
+double Application::gatherConfidentMessage() {
     if (rank == 0) {
-        vector<float> executionTimes;
+        vector<double> executionTimes;
         size_t minMeasurements = configuration.getConfidenceInterval().getMinIterations();
-        float sampleStdDeviation;
-        float stdDeviationOfTheMean;
-        float confidenceInterval;
+        double sampleStdDeviation = 0;
+        double stdDeviationOfTheMean = 0;
+        double confidenceInterval = 0;
         bool confident = false;
 
         do {
@@ -357,7 +357,7 @@ float Application::gatherConfidentMessage() {
                  (configuration.getConfidenceInterval().getMaxIterations() == 0 ||
                   executionTimes.size() < configuration.getConfidenceInterval().getMaxIterations()));
 
-        const float confidentMean = Statistics::Mean(executionTimes);
+        const double confidentMean = Statistics::Mean(executionTimes);
         cout << (confident ? "Confident Mean: " : "Cut-Off Mean: ") << confidentMean
              << " +- " << confidenceInterval << " -"
              << " Mean-Variance: " << (stdDeviationOfTheMean * stdDeviationOfTheMean)

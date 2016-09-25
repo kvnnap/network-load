@@ -21,8 +21,8 @@ namespace NetworkLoad {
         void syncRanksAndPrint();
         void syncConfiguration();
 
-        float startMessaging();
-        float gatherConfidentMessage();
+        double startMessaging();
+        double gatherConfidentMessage();
 
     private:
         Configuration configuration;
