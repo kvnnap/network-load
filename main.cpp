@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <mpi.h>
 #include <cstddef>
@@ -15,8 +16,12 @@ int main(int argc, char **argv) {
 
     try {
         application.syncRanksAndPrint();
-        application.syncConfiguration();
-        application.gatherConfidentMessage();
+        vector<Results> resultVector = application.startMultipleBenchmarks();
+        if (application.getRank() == 0) {
+            for (const Results& results : resultVector) {
+                cout << results << endl;
+            }
+        }
     } catch (const exception& exception) {
         cout << "Exception: " << exception.what() << endl;
         MPI::COMM_WORLD.Abort(-1);

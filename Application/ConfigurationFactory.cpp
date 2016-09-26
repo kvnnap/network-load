@@ -12,18 +12,24 @@ using namespace std;
 using namespace rapidxml;
 using namespace NetworkLoad;
 
-unique_ptr<Configuration> ConfigurationFactory::make(const string &fileName) const {
+unique_ptr<vector<Configuration>> ConfigurationFactory::make(const string &fileName) const {
 
     // Open document
     unique_ptr<file<>> xmlFile(new file<>(fileName.c_str()));
     xml_document<> doc;
     doc.parse<0>(xmlFile->data());
 
+    // Multiple netLoad nodes
+    unique_ptr<vector<Configuration>> netLoadNodes ( new vector<Configuration>() );
+    for (xml_node<> *child = doc.first_node(); child; child = child->next_sibling()) {
+        (*netLoadNodes).push_back(getNetLoad(child));
+    }
+    return netLoadNodes;
 
-    // Net load node
+    /*// Net load node
     unique_ptr<Configuration> conf ( new Configuration() );
     *conf = getNetLoad(doc.first_node());
-    return conf;
+    return conf;*/
 }
 
 Configuration ConfigurationFactory::getNetLoad(rapidxml::xml_node<> *netLoadNode) {
@@ -38,6 +44,8 @@ Configuration ConfigurationFactory::getNetLoad(rapidxml::xml_node<> *netLoadNode
             conf.setConfidenceInterval(getConfidenceInterval(child));
         } else if (childName == "message") {
             conf.setMessageInfo(getMessageInfo(child));
+        } else if (childName == "benchmark") {
+            conf.setBenchmark(getBenchmark(child));
         } else if (childName == "nodes") {
             for (xml_node<> *childNode = child->first_node(); childNode; childNode = childNode->next_sibling()) {
                 //
@@ -122,9 +130,75 @@ ConfidenceInterval ConfigurationFactory::getConfidenceInterval(rapidxml::xml_nod
             confidenceInterval.setMinIterations(stoul(attr->value()));
         } else if (attrName == "maxIterations") {
             confidenceInterval.setMaxIterations(stoul(attr->value()));
+        } else if (attrName == "maxTimeSeconds") {
+            confidenceInterval.setMaxTimeSeconds(stoul(attr->value()));
         } else {
             throw runtime_error("Malformed XML File. Invalid XML Attribute: " + attrName);
         }
     }
     return confidenceInterval;
 }
+
+Benchmark ConfigurationFactory::getBenchmark(rapidxml::xml_node<> *benchmarkNode) {
+    Benchmark benchmark;
+
+    // Parse attributes
+    for (xml_attribute<> *attr = benchmarkNode->first_attribute(); attr; attr = attr->next_attribute()) {
+        string attrName(attr->name());
+        if (attrName == "active") {
+            benchmark.setActive(string(attr->value()) == "true");
+        } else if (attrName == "name") {
+            benchmark.setName(attr->value());
+        } else if (attrName == "pointFile") {
+            benchmark.setPointFile(attr->value());
+        } else if (attrName == "pointInfoFile") {
+            benchmark.setPointInfoFile(attr->value());
+        } else if (attrName == "tikzFile") {
+            benchmark.setTikzFile(attr->value());
+        } else {
+            throw runtime_error("Malformed XML File. Invalid XML Attribute: " + attrName);
+        }
+    }
+
+    // Parse children
+    for (xml_node<> *child = benchmarkNode->first_node(); child; child = child->next_sibling()) {
+        string childName (child->name());
+        if (childName == "messages") {
+            benchmark.setMessageInfos(getMessageInfos(child));
+        } else if (childName == "granularities") {
+            benchmark.setGranularities(getGranularities(child));
+        } else {
+            throw runtime_error("Malformed XML File. Invalid XML Node: " + childName);
+        }
+    }
+
+    return benchmark;
+}
+
+vector<MessageInfo> ConfigurationFactory::getMessageInfos(rapidxml::xml_node<> *messagesNode) {
+    vector<MessageInfo> messages;
+    for (xml_node<> *child = messagesNode->first_node(); child; child = child->next_sibling()) {
+        string childName (child->name());
+        if (childName == "message") {
+            messages.push_back(getMessageInfo(child));
+        } else {
+            throw runtime_error("Malformed XML File. Invalid XML Node: " + childName);
+        }
+    }
+    return messages;
+}
+
+vector<uint32_t> ConfigurationFactory::getGranularities(rapidxml::xml_node<> *granularityNode) {
+    vector<uint32_t > granularities;
+    for (xml_node<> *child = granularityNode->first_node(); child; child = child->next_sibling()) {
+        string childName (child->name());
+        if (childName == "granularity") {
+            granularities.push_back(getGranularity(child));
+        } else {
+            throw runtime_error("Malformed XML File. Invalid XML Node: " + childName);
+        }
+    }
+    return granularities;
+}
+
+

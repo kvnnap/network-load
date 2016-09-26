@@ -6,10 +6,13 @@
 #include <chrono>
 #include <algorithm>
 #include <limits>
+#include <fstream>
+#include <sstream>
 
 #include "Application.h"
 #include "ConfigurationFactory.h"
 #include "Mathematics/Statistics.h"
+#include "Result.h"
 
 using namespace std;
 using namespace Mathematics;
@@ -44,35 +47,33 @@ Application::~Application() {
 
 void Application::syncRanksAndPrint() {
     // Gather host names and print them - tag is 0
+    stringstream sStr;
     if (rank == 0) {
-        cout << "Ranks: " << processorName.data();
+        sStr << processorName.data();
 //        vector<string> names;
 //        names.push_back(processorName.data());
         // Receive
         array<char, MPI_MAX_PROCESSOR_NAME> name;
         for (size_t i = 1; i < size; ++i) {
             MPI::COMM_WORLD.Recv(name.data(), MPI_MAX_PROCESSOR_NAME, MPI::CHAR, i, 0);
-            cout << ", " << name.data();
+            sStr << ", " << name.data();
             //names.push_back(name.data());
         }
-        cout << endl;
         // Check for duplicates
 
     } else {
         // Send ours
         MPI::COMM_WORLD.Send(processorName.data(), MPI_MAX_PROCESSOR_NAME, MPI::CHAR, 0, 0);
     }
+
+    hostNames = sStr.str();
+    cout << hostNames << endl;
 }
 
 // Tag is 1
 void Application::syncConfiguration() {
     if (rank == 0) {
-        // Master
-        // Read Xml
-        configuration = *ConfigurationFactory().make("configuration.xml");
-        if (configuration.getNodeSize() != size) {
-            throw runtime_error ("Mismatch with number of nodes in XML and on the cluster");
-        }
+        // Master - assuming Configuration already loaded
         // Send pdf to other slaves
         std::array<uint32_t, 5> metaData = {
                 configuration.getGranularity(),
@@ -324,53 +325,46 @@ double Application::startMessaging() {
 }
 
 // No Tags - using broadcast
-double Application::gatherConfidentMessage() {
+Result Application::gatherConfidentMessage() {
+    Result result;
+
     if (rank == 0) {
         vector<double> executionTimes;
+
         size_t minMeasurements = configuration.getConfidenceInterval().getMinIterations();
-        double sampleStdDeviation = 0;
-        double stdDeviationOfTheMean = 0;
-        double confidenceInterval = 0;
-        bool confident = false;
+        size_t maxTimeSeconds = configuration.getConfidenceInterval().getMaxTimeSeconds();
+
+        result.setT1();
 
         do {
             // Send confidence flag
-            MPI::COMM_WORLD.Bcast(&confident, 1, MPI::BOOL, 0);
+            MPI::COMM_WORLD.Bcast(&result.confident, 1, MPI::BOOL, 0);
 
             // Compute
             executionTimes.push_back(startMessaging());
+            result.setT2(static_cast<double>(maxTimeSeconds));
 
-            if (executionTimes.size() == minMeasurements) {
+            if ((executionTimes.size() == minMeasurements) || result.timeout) {
                 // Do confidence check
                 // Do twice more measurements if not confident enough
                 minMeasurements *= 2;
 
                 // Check if we're confident enough this time round
-                sampleStdDeviation = Statistics::SampleStdDeviation(executionTimes);
-                stdDeviationOfTheMean = Statistics::StdDeviationOfTheMean(sampleStdDeviation,
-                                                                                      executionTimes.size());
-                confidenceInterval =
-                        stdDeviationOfTheMean * configuration.getConfidenceInterval().getStdConfidence();
-                confident = confidenceInterval <= configuration.getConfidenceInterval().getConfIntervalThreshold();
+                result.computeConfidenceMetrics(configuration, executionTimes);
             }
-        } while (!confident &&
+        } while (!result.confident && !result.timeout &&
                  (configuration.getConfidenceInterval().getMaxIterations() == 0 ||
                   executionTimes.size() < configuration.getConfidenceInterval().getMaxIterations()));
 
-        const double confidentMean = Statistics::Mean(executionTimes);
-        cout << (confident ? "Confident Mean: " : "Cut-Off Mean: ") << confidentMean
-             << " +- " << confidenceInterval << " -"
-             << " Mean-Variance: " << (stdDeviationOfTheMean * stdDeviationOfTheMean)
-             << " Variance: " << (sampleStdDeviation * sampleStdDeviation)
-             << endl;
+        result.messageInfo = configuration.getMessageInfo();
+        result.granularity = configuration.getGranularity();
+        result.computeMean(executionTimes);
 
-        // Reuse confidence flag and send it
-        confident = true;
+        // Fake confidence flag and send it
+        bool confident = true;
         MPI::COMM_WORLD.Bcast(&confident, 1, MPI::BOOL, 0);
 
         MPI::COMM_WORLD.Barrier();
-
-        return confidentMean;
     } else {
         bool confident;
         do {
@@ -381,6 +375,131 @@ double Application::gatherConfidentMessage() {
             }
         } while (!confident);
         MPI::COMM_WORLD.Barrier();
-        return 0.f;
     }
+
+    return result;
+}
+
+Results Application::startBenchmark() {
+    Results results;
+    uint32_t rounds;
+
+    if (rank == 0) {
+        // Set configuration -- assuming already loaded
+        results.setConfiguration(configuration);
+        results.setHostName(hostNames);
+
+        // Get reference to benchmark
+        const Benchmark& benchmark = configuration.getBenchmark();
+
+        // Standard run
+        if (!benchmark.isActive()) {
+            rounds = 1;
+            MPI::COMM_WORLD.Bcast(&rounds, 1, MPI::UNSIGNED, 0);
+            syncConfiguration();
+            results.addResult(gatherConfidentMessage());
+            return results;
+        }
+
+        // Benchmark
+        rounds = static_cast<uint32_t>(benchmark.getGranularities().size() * benchmark.getMessageInfos().size());
+        MPI::COMM_WORLD.Bcast(&rounds, 1, MPI::UNSIGNED, 0);
+
+        for (uint32_t granularity : benchmark.getGranularities()) {
+            configuration.setGranularity(granularity);
+            for (const MessageInfo& messageInfo : benchmark.getMessageInfos()) {
+                configuration.setMessageInfo(messageInfo);
+                // Do a run
+                syncConfiguration();
+                results.addResult(gatherConfidentMessage());
+            }
+        }
+
+        // Export to File
+        results.exportTikzPlot(configuration.getBenchmark().getName(), configuration.getBenchmark().getTikzFile(),
+                               configuration.getBenchmark().getPointFile());
+        results.exportPointsInfo(configuration.getBenchmark().getName(), configuration.getBenchmark().getPointInfoFile());
+    } else {
+        MPI::COMM_WORLD.Bcast(&rounds, 1, MPI::UNSIGNED, 0);
+        for (uint32_t i = 0; i < rounds; ++i) {
+            syncConfiguration();
+            gatherConfidentMessage();
+        }
+    }
+
+    return results;
+}
+
+size_t Application::getRank() const {
+    return rank;
+}
+
+void Application::loadConfiguration(const string &configurationFileName) {
+    if (configurationFileName.size() == 0) {
+        throw runtime_error ("Source XML file for configuration not set");
+    }
+    vector<Configuration> localConfigurations = *ConfigurationFactory().make(configurationFileName);
+    for (const Configuration& conf : localConfigurations) {
+        if (conf.getNodeSize() != size) {
+            throw runtime_error("Mismatch with number of nodes in XML and on the cluster");
+        }
+    }
+
+    // Append to our own
+    configurations.insert(configurations.end(), localConfigurations.begin(), localConfigurations.end());
+}
+
+void Application::resetConfiguration() {
+    configuration = Configuration();
+}
+
+std::vector<Results> Application::startMultipleBenchmarks() {
+    // read XML file locator file
+    vector<Results> results;
+
+    if (rank == 0) {
+        vector<string> xmlFileNames;
+        // Read file
+        {
+            ifstream input("XmlFileLocations.txt");
+            for (std::string line; getline(input, line);) {
+                if (line.size() > 4) {
+                    xmlFileNames.push_back(line);
+                }
+            }
+        }
+
+        // Load number of benchmarks
+        for (const string &xmlFileName : xmlFileNames) {
+            loadConfiguration(xmlFileName);
+        }
+
+        uint32_t numberOfBenchmarks = configurations.size();
+        MPI::COMM_WORLD.Bcast(&numberOfBenchmarks, 1, MPI::UNSIGNED, 0);
+
+        // Start
+        size_t i = 0;
+        for (const Configuration & conf : configurations) {
+
+            // Print progress
+            cout << "Benchmark: " << ++i << " out of " << configurations.size() << endl;
+
+            // reset app - nothing much
+            resetConfiguration();
+
+            // start!
+            configuration = conf;
+            results.push_back(startBenchmark());
+        }
+    } else {
+        uint32_t numberOfBenchmarks;
+        MPI::COMM_WORLD.Bcast(&numberOfBenchmarks, 1, MPI::UNSIGNED, 0);
+        for (uint32_t benchmarkNumber = 0; benchmarkNumber < numberOfBenchmarks; ++benchmarkNumber) {
+            // Slaves do not need resetting of configuration variables, but let's simulate a clean Application object
+            resetConfiguration();
+            results.push_back(startBenchmark());
+        }
+    }
+
+    return results;
 }

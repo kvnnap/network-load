@@ -10,6 +10,8 @@
 #include <array>
 #include <mpi.h>
 #include "Configuration.h"
+#include "Result.h"
+#include "Results.h"
 
 namespace NetworkLoad {
 
@@ -18,16 +20,36 @@ namespace NetworkLoad {
         Application(int argc, char **argv);
         ~Application();
 
+        // Synchronisation
         void syncRanksAndPrint();
-        void syncConfiguration();
 
-        double startMessaging();
-        double gatherConfidentMessage();
+        // Benchmark
+        std::vector<Results> startMultipleBenchmarks();
+
+        // Get
+        size_t getRank() const;
 
     private:
+        // reset
+        void resetConfiguration();
+
+        // Configuration
+        void loadConfiguration(const std::string &configurationFileName);
+        void syncConfiguration();
+
+        // Messaging and confidence
+        double startMessaging();
+        Result gatherConfidentMessage();
+
+        // Benchmark
+        Results startBenchmark();
+
+        // Data
+        std::vector<Configuration> configurations;
         Configuration configuration;
         std::array<char, MPI_MAX_PROCESSOR_NAME> processorName;
         size_t size, rank;
+        std::string hostNames;
     };
 
 }

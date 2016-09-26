@@ -10,9 +10,28 @@
         4 = Same as 3, but message operations are shuffled before being made global
 	 -->
 	<messagingmethod>4</messagingmethod>
-	<granularity>0</granularity>
-	<confidence stdConfidence="2" confidenceIntervalThreshold="10000" minIterations="2" maxIterations="16"></confidence>
+	<confidence stdConfidence="2"
+				confidenceIntervalThreshold="0.001"
+				minIterations="2"
+				maxIterations="0"
+				maxTimeSeconds="1"
+	></confidence>
 	<message size="16" length="1024"></message>
+	<granularity>0</granularity>
+	<benchmark active="true" name="test" pointFile="test.pts" pointInfoFile="test.txt" tikzFile="test.tikz">
+		<messages>
+			<message size="16" length="8"></message>
+			<message size="16" length="1280"></message>
+			<message size="16" length="16384"></message>
+			<message size="16" length="65536"></message>
+		</messages>
+		<granularities>
+			<granularity>1</granularity>
+			<granularity>100</granularity>
+			<granularity>10000</granularity>
+			<granularity>1000000</granularity>
+		</granularities>
+	</benchmark>
 	<nodes size="2">
 		<!-- Rank 0 -->
 		<pdsf>
