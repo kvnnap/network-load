@@ -28,8 +28,8 @@ NetworkLoad::Result::Result()
 void Result::computeConfidenceMetrics(const Configuration& configuration, const vector<double> &executionTimes) {
     sampleStdDeviation = Statistics::SampleStdDeviation(executionTimes);
     stdDeviationOfTheMean = Statistics::StdDeviationOfTheMean(sampleStdDeviation, executionTimes.size());
-    confidenceInterval = stdDeviationOfTheMean * configuration.getConfidenceInterval().getStdConfidence();
-    confident = confidenceInterval <= configuration.getConfidenceInterval().getConfIntervalThreshold();
+    confidenceInterval = stdDeviationOfTheMean * configuration.getConfidence().getStdConfidence();
+    confident = confidenceInterval <= configuration.getConfidence().getConfIntervalThreshold();
 }
 
 void Result::computeMean(const std::vector<double> &executionTimes) {
@@ -49,17 +49,9 @@ void Result::setT1() {
 }
 
 string Result::exportDatum() const {
-    string points;
     stringstream sPoints;
     sPoints << granularity << " " << messageInfo.getMessageLength() << " " << mean /*<< " vs " << to_string(mean)*/ << endl;
     return sPoints.str();
-    /*points += to_string(granularity);
-    points += ' ';
-    points += to_string(messageInfo.getMessageLength());
-    points += ' ';
-    points += to_string(mean);
-    points += '\n';
-    return points;*/
 }
 
 ostream &::NetworkLoad::operator<<(ostream &strm, const NetworkLoad::Result &result) {
@@ -69,10 +61,11 @@ ostream &::NetworkLoad::operator<<(ostream &strm, const NetworkLoad::Result &res
          << "Message Count: " << result.messageInfo.getMessageSize() << endl
          << "Type: " << (result.confident ? "Confident Mean" : "Cut-Off Mean") << endl
          << "Timed Out: " << (result.timeout ? "Yes" : "No") << endl
-         << "Confidence Interval: " << result.confidenceInterval << endl
+         << "Confidence Interval: +/- " << result.confidenceInterval << endl
+         << "Confidence Range: [" << (result.mean - result.confidenceInterval) << ", " << (result.mean + result.confidenceInterval) << "]" << endl
          << "Mean Variance: " << (result.stdDeviationOfTheMean * result.stdDeviationOfTheMean) << endl
          << "Data Variance: " << (result.sampleStdDeviation * result.sampleStdDeviation) << endl
-         << "Iterations: " << result.iterations << endl
+         << "Iterations/Sample Size: " << result.iterations << endl
          << "Run Duration (s): " << result.runDuration << endl;
     return strm;
 }

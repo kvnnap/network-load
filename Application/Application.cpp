@@ -331,8 +331,8 @@ Result Application::gatherConfidentMessage() {
     if (rank == 0) {
         vector<double> executionTimes;
 
-        size_t minMeasurements = configuration.getConfidenceInterval().getMinIterations();
-        size_t maxTimeSeconds = configuration.getConfidenceInterval().getMaxTimeSeconds();
+        size_t minMeasurements = configuration.getConfidence().getMinIterations();
+        size_t maxTimeSeconds = configuration.getConfidence().getMaxTimeSeconds();
 
         result.setT1();
 
@@ -353,8 +353,8 @@ Result Application::gatherConfidentMessage() {
                 result.computeConfidenceMetrics(configuration, executionTimes);
             }
         } while (!result.confident && !result.timeout &&
-                 (configuration.getConfidenceInterval().getMaxIterations() == 0 ||
-                  executionTimes.size() < configuration.getConfidenceInterval().getMaxIterations()));
+                 (configuration.getConfidence().getMaxIterations() == 0 ||
+                  executionTimes.size() < configuration.getConfidence().getMaxIterations()));
 
         result.messageInfo = configuration.getMessageInfo();
         result.granularity = configuration.getGranularity();

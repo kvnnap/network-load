@@ -28,9 +28,9 @@ namespace NetworkLoad {
 
     std::ostream& operator<< (std::ostream& strm, const MessageInfo& messageInfo);
 
-    class ConfidenceInterval {
+    class Confidence {
     public:
-        ConfidenceInterval();
+        Confidence();
 
         // Setters
         void setStdConfidence(float p_stdConfidence);
@@ -53,7 +53,7 @@ namespace NetworkLoad {
         size_t maxTimeSeconds;
     };
 
-    std::ostream& operator<< (std::ostream& strm, const ConfidenceInterval& ConfidenceInterval);
+    std::ostream& operator<< (std::ostream& strm, const Confidence& confidence);
 
     class Benchmark {
     public:
@@ -97,7 +97,7 @@ namespace NetworkLoad {
         void setGranularity(uint32_t p_granularity);
         void setMessageInfo(const MessageInfo& p_messageInfo);
         void addStepPDF(const Sampler::StepPDF& p_stepPDF);
-        void setConfidenceInterval(const ConfidenceInterval& p_confidenceInterval);
+        void setConfidence(const Confidence &p_confidence);
         void setBenchmark(const Benchmark& p_benchmark);
 
         // Getters
@@ -106,7 +106,7 @@ namespace NetworkLoad {
         const MessageInfo& getMessageInfo() const;
         const std::vector<Sampler::StepPDF>& getStepPDFs() const;
         size_t getNodeSize() const;
-        const ConfidenceInterval& getConfidenceInterval() const;
+        const Confidence& getConfidence() const;
         const Benchmark& getBenchmark() const;
 
         // Non-const getters
@@ -117,7 +117,7 @@ namespace NetworkLoad {
         uint32_t messagingMethod;
         uint32_t granularity;
         MessageInfo messageInfo;
-        ConfidenceInterval confidenceInterval;
+        Confidence confidence;
         std::vector<Sampler::StepPDF> stepPDFs;
         Benchmark benchmark;
     };

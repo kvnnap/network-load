@@ -41,7 +41,7 @@ Configuration ConfigurationFactory::getNetLoad(rapidxml::xml_node<> *netLoadNode
         } else if (childName == "granularity") {
             conf.setGranularity(getGranularity(child));
         } else if (childName == "confidence") {
-            conf.setConfidenceInterval(getConfidenceInterval(child));
+            conf.setConfidence(getConfidence(child));
         } else if (childName == "message") {
             conf.setMessageInfo(getMessageInfo(child));
         } else if (childName == "benchmark") {
@@ -118,25 +118,25 @@ uint32_t ConfigurationFactory::getValue(const std::string &value) {
     throw runtime_error("Cannot convert " + value + " to uint32_t");
 }
 
-ConfidenceInterval ConfigurationFactory::getConfidenceInterval(rapidxml::xml_node<> *confidenceIntervalNode) {
-    ConfidenceInterval confidenceInterval;
-    for (xml_attribute<> *attr = confidenceIntervalNode->first_attribute(); attr; attr = attr->next_attribute()) {
+Confidence ConfigurationFactory::getConfidence(rapidxml::xml_node<> *confidenceNode) {
+    Confidence confidence;
+    for (xml_attribute<> *attr = confidenceNode->first_attribute(); attr; attr = attr->next_attribute()) {
         string attrName (attr->name());
         if (attrName == "stdConfidence") {
-            confidenceInterval.setStdConfidence(stof(attr->value()));
+            confidence.setStdConfidence(stof(attr->value()));
         } else if (attrName == "confidenceIntervalThreshold") {
-            confidenceInterval.setConfIntervalThreshold(stof(attr->value()));
+            confidence.setConfIntervalThreshold(stof(attr->value()));
         } else if (attrName == "minIterations") {
-            confidenceInterval.setMinIterations(stoul(attr->value()));
+            confidence.setMinIterations(stoul(attr->value()));
         } else if (attrName == "maxIterations") {
-            confidenceInterval.setMaxIterations(stoul(attr->value()));
+            confidence.setMaxIterations(stoul(attr->value()));
         } else if (attrName == "maxTimeSeconds") {
-            confidenceInterval.setMaxTimeSeconds(stoul(attr->value()));
+            confidence.setMaxTimeSeconds(stoul(attr->value()));
         } else {
             throw runtime_error("Malformed XML File. Invalid XML Attribute: " + attrName);
         }
     }
-    return confidenceInterval;
+    return confidence;
 }
 
 Benchmark ConfigurationFactory::getBenchmark(rapidxml::xml_node<> *benchmarkNode) {

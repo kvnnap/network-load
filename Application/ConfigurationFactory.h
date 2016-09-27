@@ -24,7 +24,7 @@ namespace NetworkLoad {
         static Configuration getNetLoad(rapidxml::xml_node<>* netLoadNode);
         static uint32_t getGranularity(rapidxml::xml_node<>* granularityNode);
         static MessageInfo getMessageInfo(rapidxml::xml_node<>* messageNode);
-        static ConfidenceInterval getConfidenceInterval(rapidxml::xml_node<>* confidenceIntervalNode);
+        static Confidence getConfidence(rapidxml::xml_node<> *confidenceNode);
         static Sampler::StepPDF getPDSF(rapidxml::xml_node<>* psdfNode);
         static uint32_t getValue (const std::string& value);
 
