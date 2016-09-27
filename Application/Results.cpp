@@ -12,8 +12,9 @@ ostream& ::NetworkLoad::operator<<(ostream &strm, const Results &results) {
     strm << "Host Names (Ranks): " << results.getHostNames() << endl
          << "Configuration: " << endl << results.getConfiguration() << endl
          << "Result[s]: " << endl;
+    size_t i = 0;
     for (const Result& result : results.getResults()) {
-        strm << result << endl;
+        strm << "Result/Datum #" << ++i << endl << result << endl;
     }
     return strm;
 }

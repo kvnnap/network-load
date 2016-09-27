@@ -398,6 +398,7 @@ Results Application::startBenchmark() {
             MPI::COMM_WORLD.Bcast(&rounds, 1, MPI::UNSIGNED, 0);
             syncConfiguration();
             results.addResult(gatherConfidentMessage());
+            cout << results << endl;
             return results;
         }
 
@@ -405,20 +406,22 @@ Results Application::startBenchmark() {
         rounds = static_cast<uint32_t>(benchmark.getGranularities().size() * benchmark.getMessageInfos().size());
         MPI::COMM_WORLD.Bcast(&rounds, 1, MPI::UNSIGNED, 0);
 
+        uint32_t statI = 0;
         for (uint32_t granularity : benchmark.getGranularities()) {
             configuration.setGranularity(granularity);
             for (const MessageInfo& messageInfo : benchmark.getMessageInfos()) {
                 configuration.setMessageInfo(messageInfo);
                 // Do a run
+                cout << "Sub Benchmark: " << ++statI << " out of " << rounds << endl;
                 syncConfiguration();
                 results.addResult(gatherConfidentMessage());
+                // Export to File continuously - Should add single export method and use append mode
+                results.exportTikzPlot(configuration.getBenchmark().getName(), configuration.getBenchmark().getTikzFile(),
+                                       configuration.getBenchmark().getPointFile());
+                results.exportPointsInfo(configuration.getBenchmark().getName(), configuration.getBenchmark().getPointInfoFile());
             }
         }
 
-        // Export to File
-        results.exportTikzPlot(configuration.getBenchmark().getName(), configuration.getBenchmark().getTikzFile(),
-                               configuration.getBenchmark().getPointFile());
-        results.exportPointsInfo(configuration.getBenchmark().getName(), configuration.getBenchmark().getPointInfoFile());
     } else {
         MPI::COMM_WORLD.Bcast(&rounds, 1, MPI::UNSIGNED, 0);
         for (uint32_t i = 0; i < rounds; ++i) {

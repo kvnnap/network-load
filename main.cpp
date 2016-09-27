@@ -16,12 +16,7 @@ int main(int argc, char **argv) {
 
     try {
         application.syncRanksAndPrint();
-        vector<Results> resultVector = application.startMultipleBenchmarks();
-        if (application.getRank() == 0) {
-            for (const Results& results : resultVector) {
-                cout << results << endl;
-            }
-        }
+        /*vector<Results> resultVector =*/ application.startMultipleBenchmarks();
     } catch (const exception& exception) {
         cout << "Exception: " << exception.what() << endl;
         MPI::COMM_WORLD.Abort(-1);
